@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>login_window</class>
+ <widget class="QMainWindow" name="login_window">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>320</width>
+    <height>420</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>AMPU 1.0 - Login</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="styleSheet">
+    <string notr="true">#top_bar1{
+background-color: rgb(0, 199, 60);
+boder-bottom : 1px solid rgb(0, 172, 21);
+}
+#naver_login_button{
+border : 1px solid #239e36;
+font: 75 11pt &quot;나눔고딕&quot;;
+font-weight : bold;
+color: rgb(255, 255, 255);
+background-color : #28a93a;
+border-radius: 3px
+}
+#naver_login_button:hover
+{
+	background-color: rgb(25, 107, 36);
+}
+
+#label{
+background-color: rgb(255, 255, 255);
+}</string>
+   </property>
+   <widget class="QPushButton" name="naver_login_button">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>360</y>
+      <width>280</width>
+      <height>44</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="text">
+     <string>NAVER 아이디로 로그인</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="logo_image">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>70</y>
+      <width>280</width>
+      <height>280</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="top_bar1">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>320</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="logo_image_2">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>108</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>51</y>
+      <width>321</width>
+      <height>371</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <zorder>label</zorder>
+   <zorder>logo_image</zorder>
+   <zorder>naver_login_button</zorder>
+   <zorder>top_bar1</zorder>
+   <zorder>logo_image_2</zorder>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
