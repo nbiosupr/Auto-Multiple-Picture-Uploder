@@ -83,14 +83,41 @@ class Task:
 
 class AmpuTaskManager:
     def __init__(self, ampu_core):
-        self.__task_list = list()
-        self.__ampu_core = Ampu()
+        self.__task_list = dict()
+        self.__ampu_core = ampu_core
+
+        self.whole_task_number = 0
+        self.processed_task_number = 0
 
     def naver_login(self):
         self.__ampu_core.login()
 
     def add_task(self, my_task):
-        self.__task_list.append(my_task)
+        if my_task.task_title in self.__task_list.keys():
+            return False
+        self.__task_list[my_task.task_title] = my_task
+        self.whole_task_number += 1
+        return True
+
+    def read_task(self, task_name):
+        if task_name in self.__task_list.keys():
+            return False
+        return self.__task_list[task_name]
+
+    def update_task(self, my_task):
+        if my_task.task_title not in self.__task_list.keys():
+            return False
+        self.__task_list[my_task.task_title] = my_task
+        return True
+
+    def delete_task(self, task_name):
+        try:
+            self.__task_list.pop(task_name)
+        except Exception:
+            return False
+
+        self.whole_task_number -= 1
+        return True
 
     def execute(self):
         if len(self.__task_list) == 0:
@@ -99,7 +126,6 @@ class AmpuTaskManager:
         ampu_core = self.__ampu_core
 
         for task in self.__task_list:
-            cafe_path = task.cafe_path
             menu_name = task.menu_name
             subject = task.post_title
             image_folder_path = task.images_path
@@ -109,7 +135,7 @@ class AmpuTaskManager:
 
             ampu_core.go_to_cafe(task.cafe_path)
 
-            if divided_number == 1 :
+            if divided_number == 1:
                 my_post = Post()
                 my_post.set_menu_name(menu_name)
                 my_post.set_title(subject)
@@ -125,6 +151,13 @@ class AmpuTaskManager:
                     my_post.set_images(temp_images)
                     ampu_core.write(my_post)
                     idx += 1
+
+            self.processed_task_number += 1
+
+        self.whole_task_number = 0
+        self.processed_task_number = 0
+
+        self.__task_list.clear()
 
 
 class Post:
@@ -307,7 +340,7 @@ class Ampu:
                 divided_images_list.append(divided_images)
                 # 초기화
                 total_size = 0
-                divided_images= list()
+                divided_images = list()
                 # 새 리스트에 저장
                 total_size += image_size
                 divided_images.append(image_path)
@@ -322,7 +355,7 @@ class Ampu:
         if number_of_div < 1:
             raise IlligalArgumentError('[e : @ampu.__divide_images_by_number] 잘못된 파라미터입니다. 1 이상의 값을 전달해 주세요')
 
-        divided_images_list = []
+        divided_images_list = list()
         number_of_images = len(images)
         number_of_each_list = int(number_of_images / number_of_div)
         start_index = 0
@@ -341,13 +374,14 @@ class Ampu:
     ##########################
     # public instance method #
     ##########################
+
     def go_to_cafe(self, cafe_path):
         if not self.__is_login:
             raise LoginFailedError
         driver = self.__driver
         driver.get(cafe_path)
 
-    def login(self, is_abroad = False, phone = None):
+    def login(self, is_abroad=False, phone=None):
         self.__initialize_driver()
 
         driver = self.__driver
@@ -415,54 +449,5 @@ def test_case_all():
     ampu_task_manager.naver_login()
     ampu_task_manager.execute()
 
-
-def test_case_convert():
-    num_mb = 50
-    convert_size = ConvertSize()
-    converted_num = convert_size(num_mb, ConvertSize.mb, ConvertSize.b)
-    print(converted_num)
-
-
-def test_case_login():
-    auto_uploader = Ampu()
-    auto_uploader.login(is_abroad=False)
-    input()
-
-
-def test_case_getfiles():
-    image_path = 'C:\\Users\\nbios\\Pictures\\test'
-    images = get_all_file(image_path)
-
-    divided_images_list = []
-    size_limit = 50 * 1024 * 1024
-
-    total_size = 0
-
-    divided_images = list()
-    for image_path in images:
-        image_size = os.path.getsize(image_path)
-        temp_total_size = total_size + image_size
-        if temp_total_size < size_limit:
-            total_size += image_size
-            divided_images.append(image_path)
-            pass
-        else:
-            divided_images_list.append(divided_images)
-            # 초기화
-            total_size = 0
-            divided_images = list()
-            # 새 리스트에 저장
-            total_size += image_size
-            divided_images.append(image_path)
-
-    if divided_images:
-        divided_images_list.append(divided_images)
-
-    for e in divided_images_list:
-        image_multi = Ampu.make_multi_file_path(e)
-        print('-------------------')
-        print(image_multi)
-
-    #print(image_multi)
 
 test_case_all()
