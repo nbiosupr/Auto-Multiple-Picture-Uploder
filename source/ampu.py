@@ -65,46 +65,96 @@ class ConvertSize:
 
 class Task:
     def __init__(self,
-                 title=None,
+                 task_title=None,
+                 cafe_path=None,
+                 menu_name=None,
+                 post_title=None,
                  comment=None,
                  images_path=None,
                  number_to_divide=None):
-        self.title = title
+        self.task_title = task_title
+        self.cafe_path = cafe_path
+        self.menu_name = menu_name
+        self.post_title = post_title
         self.comment = comment
         self.images_path = images_path
         self.number_to_divide = number_to_divide
 
 
+class AmpuTaskManager:
+    def __init__(self, ampu_core):
+        self.__task_list = list()
+        self.__ampu_core = Ampu()
+
+    def naver_login(self):
+        self.__ampu_core.login()
+
+    def add_task(self, my_task):
+        self.__task_list.append(my_task)
+
+    def execute(self):
+        if len(self.__task_list) == 0:
+            raise NoTaskError
+
+        ampu_core = self.__ampu_core
+
+        for task in self.__task_list:
+            cafe_path = task.cafe_path
+            menu_name = task.menu_name
+            subject = task.post_title
+            image_folder_path = task.images_path
+            divided_number = task.number_to_divide
+
+            images = get_all_file(image_folder_path)
+
+            ampu_core.go_to_cafe(task.cafe_path)
+
+            if divided_number == 1 :
+                my_post = Post()
+                my_post.set_menu_name(menu_name)
+                my_post.set_title(subject)
+                my_post.set_images(images)
+                ampu_core.write(my_post)
+            else:
+                images_list = ampu_core.divide_images_by_number(images, divided_number)
+                idx = 1
+                for temp_images in images_list:
+                    my_post = Post()
+                    my_post.set_menu_name(menu_name)
+                    my_post.set_title(subject + ' - ' + str(idx))
+                    my_post.set_images(temp_images)
+                    ampu_core.write(my_post)
+                    idx += 1
+
+
 class Post:
     def __init__(self):
+        self.menu_name = None
         self.title = None
-        self.images_path = None
+        self.image_list = None
+
+    def set_menu_name(self, menu_name):
+        self.menu_name = menu_name
 
     def set_images(self, images):
-        self.images_path = images
+        self.image_list = images
 
     def set_title(self, title):
         self.title = title
 
 
 class Ampu:
+    NAVER_IMAGES_SIZE_LIMIT = ConvertSize()(50,
+                                            ConvertSize.mb,
+                                            ConvertSize.b)
+    LOGIN_URL = "https://nid.naver.com/nidlogin.login?mode=form&url=https%3A%2F%2Fwww.naver.com"
+    VERY_LONG_TIME = 300
+    LONG_TIME = 20
+    SHORT_TIME = 3
+
     def __init__(self):
-        Ampu.LOGIN_URL = "https://nid.naver.com/nidlogin.login?mode=form&url=https%3A%2F%2Fwww.naver.com"
-
-        Ampu.VERY_LONG_TIME = 300
-        Ampu.LONG_TIME = 20
-        Ampu.SHORT_TIME = 3
-
-        Ampu.NAVER_IMAGES_SIZE_LIMIT = ConvertSize()(50,
-                                                   ConvertSize.mb,
-                                                   ConvertSize.b)
 
         self.__driver = None
-
-        self.__cafe_url = ''
-        self.__menu_name = ''
-        self.__subject_name = ''
-        self.__images_folder_path = ''
 
         self.__task_list = list()
 
@@ -128,13 +178,6 @@ class Ampu:
     def __initialize_driver(self):
         self.__driver = webdriver.Chrome(driver_path)
         self.__driver.implicitly_wait(3)
-
-    def __go_to_cafe(self):
-        if not self.__is_login:
-            raise LoginFailedError
-        driver = self.__driver
-        cafe_url = self.__cafe_url
-        driver.get(cafe_url)
 
     def __upload_images(self, multi_file_path):
         VERY_LONG_TIME = Ampu.VERY_LONG_TIME
@@ -184,57 +227,6 @@ class Ampu:
         )
         driver.switch_to.window(parent_window)
 
-    def __divide_images_list_by_size(self, images):
-        # 이미지 경로 리스트를 파라미터로 받습니다.
-        # 이미지 경로 리스트를 용량 제한에 맞춰 나눠 리스트에 담아 리턴합니다.
-
-        divided_images_list = []
-        size_limit = Ampu.NAVER_IMAGES_SIZE_LIMIT
-
-        total_size = 0
-
-        divided_images = list()
-        for image_path in images:
-            image_size = os.path.getsize(image_path)
-            temp_total_size = total_size + image_size
-            if temp_total_size < size_limit:
-                total_size += image_size
-                divided_images.append(image_path)
-                pass
-            else:
-                divided_images_list.append(divided_images)
-                #초기화
-                total_size = 0
-                divided_images= list()
-                #새 리스트에 저장
-                total_size += image_size
-                divided_images.append(image_path)
-
-        if divided_images:
-            divided_images_list.append(divided_images)
-
-        return divided_images_list
-
-    def __divide_images_by_number(self, images, number_of_div):
-        if number_of_div < 1 :
-            raise IlligalArgumentError('[e : @ampu.__divide_images_by_number] 잘못된 파라미터입니다. 1 이상의 값을 전달해 주세요')
-
-        divided_images_list = []
-        number_of_images = len(images)
-        number_of_each_list = int(number_of_images / number_of_div)
-        start_index = 0
-        end_index = number_of_each_list
-
-        while end_index <= number_of_images:
-            divided_images_list.append(images[start_index:end_index])
-            start_index = end_index
-            end_index = end_index + number_of_each_list
-
-        if end_index < number_of_images:
-            divided_images_list.append(images[start_index:])
-
-        return divided_images_list
-
     def __write_post(self, my_post):
         # my_post 는 post 클래스의 인스턴스 입니다.
 
@@ -243,12 +235,10 @@ class Ampu:
         SHORT_TIME = Ampu.SHORT_TIME
 
         driver = self.__driver
-        menu_name = self.__menu_name
+        menu_name = my_post.menu_name
 
         subject_text = my_post.title
-        images = my_post.images_path
-
-        #self.__go_to_cafe()
+        images = my_post.image_list
 
         # 글작성클릭
         try:
@@ -275,7 +265,7 @@ class Ampu:
         driver.find_element_by_id('subject').send_keys(subject_text)
     
         # 이미지 업로드
-        divided_images_list = self.__divide_images_list_by_size(images)
+        divided_images_list = Ampu.divide_images_list_by_size(images)
         for divided_images in divided_images_list:
             multi_file_path = Ampu.make_multi_file_path(divided_images)
             self.__upload_images(multi_file_path)
@@ -292,30 +282,75 @@ class Ampu:
         )
 
     ##########################
-    # public instance method #
+    # public class method #
     ##########################
 
-    def set_cafe(self, cafe_url):
-        self.__cafe_url = cafe_url
+    @classmethod
+    def divide_images_list_by_size(cls, images):
+        # 이미지 경로 리스트를 파라미터로 받습니다.
+        # 이미지 경로 리스트를 용량 제한에 맞춰 나눠 리스트에 담아 리턴합니다.
 
-    def set_menu(self, menu_name):
-        self.__menu_name = menu_name
+        divided_images_list = []
+        size_limit = Ampu.NAVER_IMAGES_SIZE_LIMIT
 
-    def set_subject_name(self, subject_name):
-        if not isinstance(subject_name, str):
-            raise IlligalArgumentError('[e : @Ampu.set_subject_name] subject_name 파라미터는 string 형입니다.')
+        total_size = 0
 
-        self.__subject_name = subject_name
+        divided_images = list()
+        for image_path in images:
+            image_size = os.path.getsize(image_path)
+            temp_total_size = total_size + image_size
+            if temp_total_size < size_limit:
+                total_size += image_size
+                divided_images.append(image_path)
+                pass
+            else:
+                divided_images_list.append(divided_images)
+                # 초기화
+                total_size = 0
+                divided_images= list()
+                # 새 리스트에 저장
+                total_size += image_size
+                divided_images.append(image_path)
 
-    def set_images_folder_path(self, images_folder_path):
-        if not isinstance(images_folder_path, str):
-            raise IlligalArgumentError('[e : @Ampu.set_images_folder_path] images_folder_path 파라미터는 string 형입니다.')
-        self.__images_folder_path = images_folder_path
+        if divided_images:
+            divided_images_list.append(divided_images)
+
+        return divided_images_list
+
+    @classmethod
+    def divide_images_by_number(cls, images, number_of_div):
+        if number_of_div < 1:
+            raise IlligalArgumentError('[e : @ampu.__divide_images_by_number] 잘못된 파라미터입니다. 1 이상의 값을 전달해 주세요')
+
+        divided_images_list = []
+        number_of_images = len(images)
+        number_of_each_list = int(number_of_images / number_of_div)
+        start_index = 0
+        end_index = number_of_each_list
+
+        while end_index <= number_of_images:
+            divided_images_list.append(images[start_index:end_index])
+            start_index = end_index
+            end_index = end_index + number_of_each_list
+
+        if end_index < number_of_images:
+            divided_images_list.append(images[start_index:])
+
+        return divided_images_list
+
+    ##########################
+    # public instance method #
+    ##########################
+    def go_to_cafe(self, cafe_path):
+        if not self.__is_login:
+            raise LoginFailedError
+        driver = self.__driver
+        driver.get(cafe_path)
 
     def login(self, is_abroad = False, phone = None):
         self.__initialize_driver()
 
-        driver =self.__driver
+        driver = self.__driver
         driver.get(Ampu.LOGIN_URL)
 
         try:
@@ -346,38 +381,18 @@ class Ampu:
     def add_task(self, my_task):
         self.__task_list.append(my_task)
 
-    def write(self):
+    def write(self, my_post):
         # 예외처리
         if not self.__is_login:
             raise LoginFailedError
-        if len(self.__task_list) == 0:
-            raise NoTaskError
+        try:
+            self.__write_post(my_post)
+        except Exception as e:
+            print(e)
+            return False
 
-        for task in self.__task_list:
-            subject = task.title
-            image_folder_path = task.images_path
-            divided_number = task.number_to_divide
+        return True
 
-            images = get_all_file(image_folder_path)
-
-            self.__go_to_cafe()
-
-            if divided_number == 1 :
-                my_post = Post()
-                my_post.set_title(subject)
-                my_post.set_images(images)
-                self.__write_post(my_post)
-            else:
-                images_list = self.__divide_images_by_number(images, divided_number)
-                idx = 1
-                for temp_images in images_list:
-                    my_post = Post()
-                    my_post.set_title(subject + ' - ' + str(idx))
-                    my_post.set_images(temp_images)
-                    self.__write_post(my_post)
-                    idx += 1
-
-            return True
 
 def test_case_all():
     cafe_url = 'https://cafe.naver.com/autouploadtest'
@@ -387,17 +402,19 @@ def test_case_all():
     div_num = 3
 
     auto_uploader = Ampu()
+    ampu_task_manager = AmpuTaskManager(ampu_core=auto_uploader)
 
-    auto_uploader.set_cafe(cafe_url)
-    auto_uploader.set_menu(menu_name)
-
-    my_task = Task(title=title,
+    my_task = Task(task_title='test1',
+                   cafe_path=cafe_url,
+                   menu_name=menu_name,
+                   post_title=title,
                    images_path=image_path,
                    number_to_divide=div_num)
-    auto_uploader.add_task(my_task)
+    ampu_task_manager.add_task(my_task)
 
-    auto_uploader.login(is_abroad=False)
-    auto_uploader.write()
+    ampu_task_manager.naver_login()
+    ampu_task_manager.execute()
+
 
 def test_case_convert():
     num_mb = 50
@@ -405,10 +422,12 @@ def test_case_convert():
     converted_num = convert_size(num_mb, ConvertSize.mb, ConvertSize.b)
     print(converted_num)
 
+
 def test_case_login():
     auto_uploader = Ampu()
     auto_uploader.login(is_abroad=False)
     input()
+
 
 def test_case_getfiles():
     image_path = 'C:\\Users\\nbios\\Pictures\\test'
