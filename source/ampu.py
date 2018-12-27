@@ -92,23 +92,60 @@ class AmpuTaskManager:
     def naver_login(self):
         self.__ampu_core.login()
 
-    def add_task(self, my_task):
+    def is_login(self):
+        return self.__ampu_core.is_login()
+
+    def add_task_with_task(self, my_task):
         if my_task.task_title in self.__task_list.keys():
             return False
         self.__task_list[my_task.task_title] = my_task
         self.whole_task_number += 1
         return True
 
+    def add_task(self, task_title=None,
+                 cafe_path=None,
+                 menu_name=None,
+                 post_title=None,
+                 comment=None,
+                 images_path=None,
+                 number_to_divide=None):
+        my_task = Task(task_title=task_title,
+                       cafe_path=cafe_path,
+                       menu_name=menu_name,
+                       post_title=post_title,
+                       comment=comment,
+                       images_path=images_path,
+                       number_to_divide=number_to_divide)
+
+        return self.add_task_with_task(my_task)
+
     def read_task(self, task_name):
         if task_name in self.__task_list.keys():
             return False
         return self.__task_list[task_name]
 
-    def update_task(self, my_task):
+    def update_task_with_task(self, my_task):
         if my_task.task_title not in self.__task_list.keys():
             return False
         self.__task_list[my_task.task_title] = my_task
         return True
+
+    def update_task(self, task_title=None,
+                 cafe_path=None,
+                 menu_name=None,
+                 post_title=None,
+                 comment=None,
+                 images_path=None,
+                 number_to_divide=None):
+        my_task = Task(task_title=task_title,
+                       cafe_path=cafe_path,
+                       menu_name=menu_name,
+                       post_title=post_title,
+                       comment=comment,
+                       images_path=images_path,
+                       number_to_divide=number_to_divide)
+
+        return self.update_task_with_task(my_task)
 
     def delete_task(self, task_name):
         try:
@@ -118,6 +155,9 @@ class AmpuTaskManager:
 
         self.whole_task_number -= 1
         return True
+
+    def get_task_name_list(self):
+        return self.__task_list.keys()
 
     def execute(self):
         if len(self.__task_list) == 0:
@@ -381,6 +421,9 @@ class Ampu:
         driver = self.__driver
         driver.get(cafe_path)
 
+    def is_login(self):
+        return self.__is_login
+
     def login(self, is_abroad=False, phone=None):
         self.__initialize_driver()
 
@@ -450,4 +493,4 @@ def test_case_all():
     ampu_task_manager.execute()
 
 
-test_case_all()
+#test_case_all()
